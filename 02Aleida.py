@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # 使用Streamlit自带的开源中文字体，无需上传文件
-plt.rcParams["font.sans-serif"] = ["WenQuanYi Zen Hei"]
+plt.rcParams["font.family"] = "sans-serif"  # 锁定无衬线字体族，避免被覆盖
+plt.rcParams["font.sans-serif"] = ["WenQuanYi Zen Hei"]  # Streamlit Cloud自带中文字体
 plt.rcParams["axes.unicode_minus"] = False  # 解决负号显示问题
 
 # -------------------------- 页面基础配置 --------------------------
@@ -12,8 +13,8 @@ st.title("📊 能力提升幅度雷达图生成器")
 st.markdown("---")
 
 # -------------------------- 全局中文显示配置 --------------------------
-plt.rcParams["font.family"] = ["SimHei"]
-plt.rcParams["axes.unicode_minus"] = False
+#plt.rcParams["font.family"] = ["SimHei"]
+#plt.rcParams["axes.unicode_minus"] = False
 
 # -------------------------- 核心交互区域 --------------------------
 st.sidebar.header("⚙️ 基础参数设置")
