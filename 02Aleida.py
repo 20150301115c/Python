@@ -2,6 +2,10 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
 
+# 使用Streamlit自带的开源中文字体，无需上传文件
+plt.rcParams["font.sans-serif"] = ["WenQuanYi Zen Hei"]
+plt.rcParams["axes.unicode_minus"] = False  # 解决负号显示问题
+
 # -------------------------- 页面基础配置 --------------------------
 st.set_page_config(page_title="能力提升雷达图生成器", layout="wide")
 st.title("📊 能力提升幅度雷达图生成器")
