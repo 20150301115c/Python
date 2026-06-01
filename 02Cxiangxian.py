@@ -1,15 +1,18 @@
 import streamlit as st
 import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
+
+# -------------------------- 核心：加载 SIMHEI.TTF 字体 --------------------------
+# 加载本地黑体字体（Streamlit Cloud 专用）
+simhei = FontProperties(fname="./SIMHEI.TTF", size=20)
+# 基础配置
+plt.rcParams["axes.unicode_minus"] = False  # 负号正常显示
+plt.rcParams['font.size'] = 20  # 全局字体大小20
 
 # -------------------------- 页面基础配置 --------------------------
 st.set_page_config(page_title="均值误差柱状图生成器", layout="wide")
 st.title("📊 能力维度均值误差柱状图生成器")
 st.markdown("---")
-
-# -------------------------- 全局中文显示+字体配置 --------------------------
-plt.rcParams['font.sans-serif'] = ['SimHei']
-plt.rcParams['axes.unicode_minus'] = False
-plt.rcParams['font.size'] = 20  # 全局字体大小20（原版配置）
 
 # -------------------------- 核心交互区域 --------------------------
 st.sidebar.header("⚙️ 参数设置")
@@ -58,7 +61,7 @@ if st.button("🚀 生成柱状图", type="primary"):
     rounded_means = [round(m, 2) for m in means]
     rounded_stds = [round(s, 2) for s in stds]
 
-    # ✅ 完全保留原版画布尺寸
+    # 完全保留原版画布尺寸
     plt.figure(figsize=(10, 6))
 
     # 绘制带误差线的柱状图（原版参数不变）
@@ -72,25 +75,29 @@ if st.button("🚀 生成柱状图", type="primary"):
         edgecolor='black'
     )
 
-    # 柱子上方数值标注（原版字体大小不变）
+    # 柱子上方数值标注（指定黑体）
     for bar, mean in zip(bars, rounded_means):
         height = bar.get_height()
         plt.text(
             bar.get_x() + bar.get_width() / 2,
             height + 0.03,
             f'{mean:.2f}',
-            ha='center', va='bottom', fontsize=20
+            ha='center', va='bottom', fontsize=20, fontproperties=simhei
         )
 
-    # 图表样式（完全复刻原版）
-    plt.ylabel('平均值')
+    # 图表样式（指定黑体，完全复刻原版）
+    plt.ylabel('平均值', fontproperties=simhei)
     plt.ylim(0, 3.7)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     plt.gca().spines['top'].set_visible(False)
     plt.gca().spines['right'].set_visible(False)
 
+    # X轴维度名称指定黑体
+    plt.xticks(fontproperties=simhei)
     plt.tight_layout()
 
     # 在Streamlit中展示图表
     st.pyplot(plt.gcf())
-    st.success("✅ 柱状图生成完成！")
+    st.success("✅ 柱状图生成完成！中文黑体显示正常！")
+
+    plt.close()
