@@ -71,7 +71,7 @@ if st.button("🚀 生成柱状图", type="primary"):
         yerr=rounded_stds,
         capsize=5,
         width=0.3,
-        color='#ADD8E6',
+        color='#4682B4',
         edgecolor='black'
     )
 
