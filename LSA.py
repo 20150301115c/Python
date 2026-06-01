@@ -10,16 +10,12 @@ import warnings
 import os
 import tempfile
 import zipfile
-from matplotlib.font_manager import FontProperties
 
 # 忽略警告
 warnings.filterwarnings('ignore')
 
-# ===================== 【核心】Streamlit Cloud 中文字体配置 =====================
-FONT_PATH = "./SIMHEI.TTF"
-my_font = FontProperties(fname=FONT_PATH)
-# 全局设置字体（兼容 networkx + matplotlib）
-plt.rcParams['font.family'] = my_font.get_name()
+# ===================== 【安全字体配置】删除崩溃代码，程序不报错 =====================
+# 仅保留基础配置，彻底移除导致启动崩溃的字体加载代码
 plt.rcParams["axes.unicode_minus"] = False
 # ============================================================================
 
@@ -152,7 +148,7 @@ class LagSequentialAnalysis:
         df.to_csv(os.path.join(self.output_dir, '05_序列指标.csv'), index=False, encoding='utf-8-sig')
         return df
     
-    # 6. 转换网络图（✅ 修复所有参数错误 + 字体兼容）
+    # 6. 转换网络图（无字体报错，纯功能版）
     def plot_transition_graph(self, trans_mat, adj_res):
         fig, ax = plt.subplots(figsize=(12,10))
         G = nx.DiGraph()
@@ -179,7 +175,7 @@ class LagSequentialAnalysis:
             nx.draw_networkx_edges(G,pos,width=widths,edge_color=colors,arrowsize=35,
                                   connectionstyle='arc3,rad=0.15',node_size=4000,alpha=0.85,ax=ax)
             
-            # 边标签（✅ 移除错误参数 fontproperties）
+            # 边标签
             labels = {(u,v):f"{u}→{v}\nZ={G[u][v]['z_score']:.2f}" for u,v in G.edges()}
             nx.draw_networkx_edge_labels(
                 G, pos, edge_labels=labels, 
@@ -187,7 +183,7 @@ class LagSequentialAnalysis:
                 label_pos=0.25, ax=ax
             )
         
-        # 节点标签（✅ 移除错误参数 fontproperties）
+        # 节点标签
         nx.draw_networkx_labels(
             G, pos, 
             font_size=24, font_weight='bold',
@@ -200,7 +196,7 @@ class LagSequentialAnalysis:
                     dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
     
-    # 7. 热图（✅ 字体兼容）
+    # 7. 热图（无字体报错）
     def plot_heatmaps(self, trans_mat, adj_res):
         fig, axes = plt.subplots(2,2,figsize=(16,14))
         
