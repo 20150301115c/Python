@@ -156,33 +156,41 @@ class LagSequentialAnalysis:
         df.to_csv(os.path.join(self.output_dir, '05_序列指标.csv'), index=False, encoding='utf-8-sig')
         return df
     
-    # 6. 转换网络图（强制中文字体）
+    # 6. 转换网络图（修复BUG + 强制中文字体）
     def plot_transition_graph(self, trans_mat, adj_res):
         fig, ax = plt.subplots(figsize=(12,10))
         G = nx.DiGraph()
-        for b in self.unique_behaviors: G.add_node(b)
+        for b in self.unique_behaviors: 
+            G.add_node(b)
         
+        # 添加显著边
         for i,f in enumerate(self.unique_behaviors):
             for j,t in enumerate(self.unique_behaviors):
                 z = adj_res.iloc[i,j]
                 if abs(z) > 1.96:
-                    G.add_edge(f,t,weight=trans_mat.iloc[i,j],z=z)
+                    # 统一属性名：z → z_score
+                    G.add_edge(f,t,weight=trans_mat.iloc[i,j],z_score=z)
         
         pos = nx.spring_layout(G, seed=42, k=3)
         nx.draw_networkx_nodes(G, pos, node_size=4000, node_color='#F4F6F9', 
                               edgecolors='#333', linewidths=3, ax=ax)
         
-        if G.edges():
+        if len(G.edges()) > 0:
             weights = [G[u][v]['weight'] for u,v in G.edges()]
+            # 修复：统一使用 z_score 属性
             colors = ['#D62728' if G[u][v]['z_score']>1.96 else '#1F77B4' for u,v in G.edges()]
-            widths = [w/max(weights)*8+3 for w in weights]
+            max_w = max(weights) if max(weights) > 0 else 1
+            widths = [w/max_w*8+3 for w in weights]
+            
             nx.draw_networkx_edges(G,pos,width=widths,edge_color=colors,arrowsize=35,
                                   connectionstyle='arc3,rad=0.15',node_size=4000,alpha=0.85,ax=ax)
             
+            # 边标签
             labels = {(u,v):f"{u}→{v}\nZ={G[u][v]['z_score']:.2f}" for u,v in G.edges()}
             nx.draw_networkx_edge_labels(G,pos,edge_labels=labels,fontsize=18,font_weight='bold',
                                         fontproperties=my_font,label_pos=0.25,ax=ax)
         
+        # 节点标签（强制中文字体）
         nx.draw_networkx_labels(G,pos,font_size=24,fontproperties=my_font,font_weight='bold',ax=ax)
         ax.axis('off')
         plt.tight_layout()
@@ -217,7 +225,7 @@ class LagSequentialAnalysis:
         axes[1,1].set_title('增强转换(Z>1.96)',fontsize=22,fontproperties=my_font)
         axes[1,1].tick_params(labelsize=16)
         
-        # 统一字体
+        # 统一坐标轴字体
         for ax in axes.flat:
             ax.set_xticklabels(ax.get_xticklabels(), fontproperties=my_font)
             ax.set_yticklabels(ax.get_yticklabels(), fontproperties=my_font)
