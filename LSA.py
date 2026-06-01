@@ -10,8 +10,6 @@ import warnings
 import os
 import tempfile
 import zipfile
-from datetime import datetime
-from matplotlib.lines import Line2D
 from matplotlib.font_manager import FontProperties
 
 # 忽略警告
@@ -20,22 +18,21 @@ warnings.filterwarnings('ignore')
 # ===================== 【核心】Streamlit Cloud 中文字体配置 =====================
 FONT_PATH = "./SIMHEI.TTF"
 my_font = FontProperties(fname=FONT_PATH)
+# 全局设置字体（兼容 networkx + matplotlib）
+plt.rcParams['font.family'] = my_font.get_name()
 plt.rcParams["axes.unicode_minus"] = False
 # ============================================================================
 
-# ===================== 滞后序列分析类（动态行为映射版） =====================
 class LagSequentialAnalysis:
     def __init__(self, data, behavior_mapping, unique_behaviors, output_dir):
         self.data = data
         self.output_dir = output_dir
-        self.behavior_mapping = behavior_mapping  # 用户自定义映射
-        self.unique_behaviors = unique_behaviors  # 用户自定义行为顺序
+        self.behavior_mapping = behavior_mapping
+        self.unique_behaviors = unique_behaviors
         
-        # 创建输出文件夹
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
         
-        # 解析序列数据
         self.students = self.data.iloc[:, 0].values
         self.sequences = self.data.iloc[:, 1:].values
         self.all_behaviors = []
@@ -44,7 +41,7 @@ class LagSequentialAnalysis:
         for idx, row in enumerate(self.sequences):
             student_behaviors = []
             for b in row:
-                if pd.notna(b) and str(b).strip() != '' and str(b).strip() != 'nan':
+                if pd.notna(b) and str(b).strip() not in ['', 'nan']:
                     behavior_code = str(b).strip()
                     behavior_cn = self.behavior_mapping.get(behavior_code, behavior_code)
                     student_behaviors.append(behavior_cn)
@@ -108,7 +105,6 @@ class LagSequentialAnalysis:
                     adj_f = np.sqrt((1-rp)*(1-cp)) if np.sqrt((1-rp)*(1-cp))>0 else 1
                     adj_res.loc[i,j] = res/adj_f
         
-        # 生成Z值详情
         z_details = []
         for i in self.unique_behaviors:
             for j in self.unique_behaviors:
@@ -156,7 +152,7 @@ class LagSequentialAnalysis:
         df.to_csv(os.path.join(self.output_dir, '05_序列指标.csv'), index=False, encoding='utf-8-sig')
         return df
     
-    # 6. 转换网络图（修复BUG + 强制中文字体）
+    # 6. 转换网络图（✅ 修复所有参数错误 + 字体兼容）
     def plot_transition_graph(self, trans_mat, adj_res):
         fig, ax = plt.subplots(figsize=(12,10))
         G = nx.DiGraph()
@@ -168,8 +164,7 @@ class LagSequentialAnalysis:
             for j,t in enumerate(self.unique_behaviors):
                 z = adj_res.iloc[i,j]
                 if abs(z) > 1.96:
-                    # 统一属性名：z → z_score
-                    G.add_edge(f,t,weight=trans_mat.iloc[i,j],z_score=z)
+                    G.add_edge(f,t, weight=trans_mat.iloc[i,j], z_score=z)
         
         pos = nx.spring_layout(G, seed=42, k=3)
         nx.draw_networkx_nodes(G, pos, node_size=4000, node_color='#F4F6F9', 
@@ -177,7 +172,6 @@ class LagSequentialAnalysis:
         
         if len(G.edges()) > 0:
             weights = [G[u][v]['weight'] for u,v in G.edges()]
-            # 修复：统一使用 z_score 属性
             colors = ['#D62728' if G[u][v]['z_score']>1.96 else '#1F77B4' for u,v in G.edges()]
             max_w = max(weights) if max(weights) > 0 else 1
             widths = [w/max_w*8+3 for w in weights]
@@ -185,53 +179,62 @@ class LagSequentialAnalysis:
             nx.draw_networkx_edges(G,pos,width=widths,edge_color=colors,arrowsize=35,
                                   connectionstyle='arc3,rad=0.15',node_size=4000,alpha=0.85,ax=ax)
             
-            # 边标签
+            # 边标签（✅ 移除错误参数 fontproperties）
             labels = {(u,v):f"{u}→{v}\nZ={G[u][v]['z_score']:.2f}" for u,v in G.edges()}
-            nx.draw_networkx_edge_labels(G,pos,edge_labels=labels,fontsize=18,font_weight='bold',
-                                        fontproperties=my_font,label_pos=0.25,ax=ax)
+            nx.draw_networkx_edge_labels(
+                G, pos, edge_labels=labels, 
+                font_size=18, font_weight='bold',
+                label_pos=0.25, ax=ax
+            )
         
-        # 节点标签（强制中文字体）
-        nx.draw_networkx_labels(G,pos,font_size=24,fontproperties=my_font,font_weight='bold',ax=ax)
+        # 节点标签（✅ 移除错误参数 fontproperties）
+        nx.draw_networkx_labels(
+            G, pos, 
+            font_size=24, font_weight='bold',
+            ax=ax
+        )
+        
         ax.axis('off')
         plt.tight_layout()
-        plt.savefig(os.path.join(self.output_dir, '06_行为转换图.png'), dpi=300, bbox_inches='tight', facecolor='white')
+        plt.savefig(os.path.join(self.output_dir, '06_行为转换图.png'), 
+                    dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
     
-    # 7. 热图（强制中文字体）
+    # 7. 热图（✅ 字体兼容）
     def plot_heatmaps(self, trans_mat, adj_res):
         fig, axes = plt.subplots(2,2,figsize=(16,14))
+        
         # 频率热图
         sns.heatmap(trans_mat, annot=True, fmt='g', cmap='Blues', ax=axes[0,0],
-                    annot_kws={'size':20,'weight':'bold','fontproperties':my_font})
-        axes[0,0].set_title('转换频率',fontsize=22,fontproperties=my_font)
+                    annot_kws={'size':20,'weight':'bold'})
+        axes[0,0].set_title('转换频率',fontsize=22)
         axes[0,0].tick_params(labelsize=16)
+        
         # 残差热图
         vmax = max(abs(adj_res.min().min()), adj_res.max().max())
         sns.heatmap(adj_res, annot=True, fmt='.2f', cmap='RdBu_r', center=0, ax=axes[0,1],
-                    annot_kws={'size':20,'weight':'bold','fontproperties':my_font})
-        axes[0,1].set_title('调整残差(Z值)',fontsize=22,fontproperties=my_font)
+                    annot_kws={'size':20,'weight':'bold'})
+        axes[0,1].set_title('调整残差(Z值)',fontsize=22)
         axes[0,1].tick_params(labelsize=16)
+        
         # 显著性热图
         sig = np.where(abs(adj_res)>3.29,3,np.where(abs(adj_res)>2.58,2,np.where(abs(adj_res)>1.96,1,0)))
         sns.heatmap(sig, annot=True, fmt='g', cmap='YlOrRd', ax=axes[1,0],
-                    annot_kws={'size':20,'weight':'bold','fontproperties':my_font})
-        axes[1,0].set_title('显著性(0-无,3-极高)',fontsize=22,fontproperties=my_font)
+                    annot_kws={'size':20,'weight':'bold'})
+        axes[1,0].set_title('显著性(0-无,3-极高)',fontsize=22)
         axes[1,0].tick_params(labelsize=16)
+        
         # 正向显著
         pos_sig = adj_res.copy()
         pos_sig[pos_sig<1.96] = 0
         sns.heatmap(pos_sig, annot=True, fmt='.2f', cmap='Greens', ax=axes[1,1],
-                    annot_kws={'size':20,'weight':'bold','fontproperties':my_font})
-        axes[1,1].set_title('增强转换(Z>1.96)',fontsize=22,fontproperties=my_font)
+                    annot_kws={'size':20,'weight':'bold'})
+        axes[1,1].set_title('增强转换(Z>1.96)',fontsize=22)
         axes[1,1].tick_params(labelsize=16)
         
-        # 统一坐标轴字体
-        for ax in axes.flat:
-            ax.set_xticklabels(ax.get_xticklabels(), fontproperties=my_font)
-            ax.set_yticklabels(ax.get_yticklabels(), fontproperties=my_font)
-        
         plt.tight_layout()
-        plt.savefig(os.path.join(self.output_dir, '07_转换热图.png'), dpi=300, bbox_inches='tight', facecolor='white')
+        plt.savefig(os.path.join(self.output_dir, '07_转换热图.png'), 
+                    dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
     
     # 8. 汇总Excel
@@ -257,13 +260,13 @@ class LagSequentialAnalysis:
         self.save_log()
         return self.output_dir
 
-# ===================== Streamlit 页面主程序 =====================
+# ===================== Streamlit 主程序 =====================
 def main():
     st.set_page_config(page_title="滞后序列分析工具", layout="wide")
     st.title("📊 滞后序列分析 LSA - 交互式工具")
     st.markdown("---")
 
-    # 1. 自定义行为设置
+    # 行为配置
     st.sidebar.header("⚙️ 行为配置")
     behavior_num = st.sidebar.selectbox("行为数量", options=[2,3,4,5,6,7,8], index=2)
     
@@ -282,11 +285,10 @@ def main():
     
     st.markdown("---")
     
-    # 2. 文件上传
+    # 文件上传
     st.subheader("📁 上传行为序列CSV文件")
     uploaded_file = st.file_uploader("上传CSV（第一列：学生编号，其余列：行为序列）", type=["csv"])
     
-    # 3. 运行分析
     if uploaded_file is not None and st.button("🚀 运行滞后序列分析", type="primary"):
         with st.spinner("正在分析中... 请稍候"):
             # 读取数据
@@ -295,11 +297,8 @@ def main():
             except:
                 df = pd.read_csv(uploaded_file, header=None, encoding="utf-8")
             
-            # 临时输出目录
             temp_dir = tempfile.mkdtemp()
-            # 初始化分析
             lsa = LagSequentialAnalysis(df, behavior_mapping, unique_behaviors, temp_dir)
-            # 执行分析
             output_dir = lsa.run()
             
             # 打包ZIP
@@ -310,7 +309,7 @@ def main():
                         file_path = os.path.join(root, file)
                         zf.write(file_path, file)
             
-            # 下载按钮
+            # 下载
             with open(zip_path, "rb") as f:
                 st.download_button(
                     label="📥 下载全部分析结果（ZIP）",
