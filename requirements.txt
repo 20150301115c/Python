@@ -1,3 +1,9 @@
 streamlit
-matplotlib
+pandas
 numpy
+matplotlib
+seaborn
+scipy
+networkx
+openpyxl
+zipfile36
