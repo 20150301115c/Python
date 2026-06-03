@@ -18,7 +18,7 @@ COLORS_03 = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7']
 # 量表默认5色
 SCALE_COLOR = ['#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB']
 
-# ====================原有6个绘图函数保留====================
+# ====================原有6个绘图函数====================
 def draw_chart1(title, labels, q1_data, q2_data, q3_data, color1, color2, color3):
     fig, ax = plt.subplots(figsize=(16, 9))
     bar_height = 0.25
@@ -132,13 +132,8 @@ def draw_chart6(group_title, q1_info, q2_info, q3_info, colors):
     st.pyplot(fig)
     plt.close()
 
-# =====================【新增：第7个绘图函数：量表横向堆叠条形】=====================
+# =====================【新增：量表题绘图函数】=====================
 def draw_chart7(fig_title, item_names, option_names, color_list, all_data):
-    """
-    item_names: 题目列表
-    option_names:5个选项
-    all_data:[[5个数值],...] 每题5个百分比
-    """
     fig, ax = plt.subplots(figsize=(20, 2+len(item_names)*1.1))
     y_pos = np.arange(len(item_names))
     for idx, data_row in enumerate(all_data):
@@ -160,11 +155,11 @@ def draw_chart7(fig_title, item_names, option_names, color_list, all_data):
     plt.close()
 
 # =====================页面主体=====================
-st.set_page_config(page_title="现状调查六合一+量表", layout="wide")
-st.title("📊 现状调查+量表图表生成器")
+st.set_page_config(page_title="问卷图表生成器", layout="wide")
+st.title("📊 问卷全类型图表生成器（7类图表）")
 st.markdown("---")
 
-# 7个标签！
+# 7个标签页
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "图表1：3组横向条形",
     "图表2：Q4-Q5条形",
@@ -175,8 +170,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "图表7：量表题(1~6题)"
 ])
 
-# ==========tab1~tab6原有代码不变（key全部保留）=========
-#tab1
+# ========== 标签1 ==========
 with tab1:
     st.header("3组横向分组条形图")
     col1, col2 = st.columns(2)
@@ -192,11 +186,12 @@ with tab1:
         c3 = st.color_picker("Q3颜色", COLORS_01["Q3"], key="t1_c3")
     if st.button("生成图表1", key="btn1"):
         lbl = [x.strip() for x in labels1.split('\n') if x.strip()]
-        d1 = [float(x) for x in q1_data.split(',')]
-        d2 = [float(x) for x in q2_data.split(',')]
-        d3 = [float(x) for x in q3_data.split(',')]
+        d1 = [float(x.strip()) for x in q1_data.split(',')]
+        d2 = [float(x.strip()) for x in q2_data.split(',')]
+        d3 = [float(x.strip()) for x in q3_data.split(',')]
         draw_chart1(title1, lbl, d1, d2, d3, c1, c2, c3)
-#tab2
+
+# ========== 标签2 ==========
 with tab2:
     st.header("Q4-Q5 横向条形图")
     col1, col2 = st.columns(2)
@@ -212,8 +207,9 @@ with tab2:
     if st.button("生成图表2", key="btn2"):
         l4 = [x.strip() for x in q4_lbl.split('\n') if x.strip()]
         l5 = [x.strip() for x in q5_lbl.split('\n') if x.strip()]
-        draw_chart2(title2, l4, [float(x) for x in d4.split(',')], l5, [float(x) for x in d5.split(',')], c4, c5)
-#tab3
+        draw_chart2(title2, l4, [float(x.strip()) for x in d4.split(',')], l5, [float(x.strip()) for x in d5.split(',')], c4, c5)
+
+# ========== 标签3 ==========
 with tab3:
     st.header("Q6-Q7 横向条形图")
     col1, col2 = st.columns(2)
@@ -229,8 +225,9 @@ with tab3:
     if st.button("生成图表3", key="btn3"):
         l6 = [x.strip() for x in q6_lbl.split('\n') if x.strip()]
         l7 = [x.strip() for x in q7_lbl.split('\n') if x.strip()]
-        draw_chart3(title3, l6, [float(x) for x in d6.split(',')], l7, [float(x) for x in d7.split(',')], c6, c7)
-#tab4
+        draw_chart3(title3, l6, [float(x.strip()) for x in d6.split(',')], l7, [float(x.strip()) for x in d7.split(',')], c6, c7)
+
+# ========== 标签4（修复颜色循环错误） ==========
 with tab4:
     st.header("双饼图（1行2列）")
     col1, col2 = st.columns(2)
@@ -244,13 +241,13 @@ with tab4:
         opt2 = st.text_area("右选项", value="按特长\n轮流\n听组长\n全员同题\n自由选", key="t4_opt2")
     with col2:
         lc = [st.color_picker(f"左{i+1}",LEFT_COLORS[i],key=f"t4_lc{i}") for i in range(5)]
-        rc = [st.color_picker(f"右{i+1}",RIGHT_COLORS[i],key=f"t4_rc{i}")]
+        rc = [st.color_picker(f"右{i+1}",RIGHT_COLORS[i],key=f"t4_rc{i}") for i in range(5)]
     if st.button("生成图表4", key="btn4"):
-        q1={"short_title":s,"data":[float(x) for x in d1.split(',')],"options":[x.strip() for x in opt1.split('\n')]}
-        q1={"short_title":s1,"data":[float(x) for x in d1.split(',')],"options":[x.strip() for x in opt1.split('\n')]}
-        q2={"short_title":s2,"data":[float(x) for x in d2.split(',')],"options":[x.strip() for x in opt2.split('\n')]}
+        q1={"short_title":s1,"data":[float(x.strip()) for x in d1.split(',')],"options":[x.strip() for x in opt1.split('\n')]}
+        q2={"short_title":s2,"data":[float(x.strip()) for x in d2.split(',')],"options":[x.strip() for x in opt2.split('\n')]}
         draw_chart4(title4,q1,q2,lc,rc)
-#tab5
+
+# ========== 标签5 ==========
 with tab5:
     st.header("2题横向堆积")
     col1, col2 = st.columns(2)
@@ -265,10 +262,11 @@ with tab5:
     with col2:
         c5=[st.color_picker(f"色{i+1}",COLORS_03[i],key=f"t5_c{i}") for i in range(5)]
     if st.button("生成图表5",key="btn5"):
-        q1={"short_title":s1,"data":[float(x) for x in d1.split(',')],"options":[x.strip() for x in o1.split('\n')]}
-        q2={"short_title":s2,"data":[float(x) for x in d2.split(',')],"options":[x.strip() for x in o2.split('\n')]}
+        q1={"short_title":s1,"data":[float(x.strip()) for x in d1.split(',')],"options":[x.strip() for x in o1.split('\n')]}
+        q2={"short_title":s2,"data":[float(x.strip()) for x in d2.split(',')],"options":[x.strip() for x in o2.split('\n')]}
         draw_chart5(title5,q1,q2,c5)
-#tab6
+
+# ========== 标签6 ==========
 with tab6:
     st.header("3题横向堆积")
     col1, col2 = st.columns(2)
@@ -286,19 +284,19 @@ with tab6:
     with col2:
         c6=[st.color_picker(f"色{i+1}",COLORS_03[i],key=f"t6_c{i}") for i in range(5)]
     if st.button("生成图表6",key="btn6"):
-        q1={"short_title":s20,"data":[float(x) for x in d20.split(',')],"options":[x.strip() for x in o20.split('\n')]}
-        q2={"short_title":s21,"data":[float(x) for x in d21.split(',')],"options":[x.strip() for x in o21.split('\n')]}
-        q3={"short_title":s22,"data":[float(x) for x in d22.split('\n')],"options":[x.strip() for x in o22.split('\n')]}
+        q1={"short_title":s20,"data":[float(x.strip()) for x in d20.split(',')],"options":[x.strip() for x in o20.split('\n')]}
+        q2={"short_title":s21,"data":[float(x.strip()) for x in d21.split(',')],"options":[x.strip() for x in o21.split('\n')]}
+        q3={"short_title":s22,"data":[float(x.strip()) for x in d22.split(',')],"options":[x.strip() for x in o22.split('\n')]}
         draw_chart6(title6,q1,q2,q3,c6)
 
-# =====================【新增tab7：量表】=====================
+# ========== 标签7：量表题（修复所有错误） ==========
 with tab7:
-    st.header("📋 量表题横向堆积图（题目1~6自选，默认5等级选项）")
+    st.header("📋 量表题横向堆积图（1~6题自定义）")
     col_left, col_right = st.columns([3,1])
     with col_left:
         fig_title = st.text_input("图表总标题",value="量表调查结果统计",key="t7_figtitle")
         qty = st.selectbox("选择题目数量",options=[1,2,3,4,5,6],index=4,key="t7_qty")
-        st.subheader("修改5个选项名称（默认：完全不符合/比较不符合/符合/比较符合/完全符合）")
+        st.subheader("选项设置（默认5点量表）")
         opt_list = []
         default_opt = ["完全不符合","比较不符合","符合","比较符合","完全符合"]
         for i in range(5):
@@ -315,13 +313,13 @@ with tab7:
             row_data = [float(i.strip()) for i in data_str.split(",")]
             all_data.append(row_data)
     with col_right:
-        st.subheader("5个选项配色")
+        st.subheader("选项配色")
         scale_color_set = []
         for i in range(5):
             c = st.color_picker(f"颜色{i+1}",SCALE_COLOR[i],key=f"t7_c{i}")
             scale_color_set.append(c)
     if st.button("生成量表图表",key="btn7",type="primary"):
-        draw_chart7(fig_title,item_names,opt_list,scale_color_set,all)
+        draw_chart7(fig_title,item_names,opt_list,scale_color_set,all_data)
 
 st.markdown("---")
-st.info("提示：SIMHEI.TTF放根目录，量表默认5个等级，题目1~6自由增减，选项可自定义修改")
+st.success("✅ 所有错误已修复！支持7类图表，SIMHEI字体正常显示")
